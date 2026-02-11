@@ -4,6 +4,8 @@ from email_service import send_email
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta, time as dt_time
 from sms_service import send_sms
+from smsapi_service import send_sms_from_smsapi
+
 app = FastAPI()
 
     
@@ -68,6 +70,39 @@ def send_single_reminder(email, name, date, time, treatment):
         send_email(email, subject, body)
   
         print("reminder procesed for:", email)
+# def format_contact_for_smsapi(number):
+
+#     number = number.replace(" ", "")
+
+#     if number.startswith("0"):
+#         return "94" + number[1:]
+#     elif number.startswith("+94"):
+#         return number[1:]
+#     elif number.startswith("94"):
+#         return number
+#     else:
+#         raise ValueError("Invalid Sri Lankan phone number")
+
+
+# def send_sms_reminder_from_smsapi(phone, name, date, time, treatment):
+
+#     formatted_phone = format_contact_for_smsapi(phone)
+
+#     message = f"""
+# DentPulse Reminder
+
+# Hello {name},
+# Appointment: {date} at {time}
+# Treatment: {treatment}
+
+# Please arrive 10 minutes early.
+# """
+
+#     send_sms_from_smsapi(formatted_phone, message)
+
+#     print("SMSAPI reminder sent to:", phone)
+
+    
 def format_contact(number):
     
     if number.startswith("0"):
@@ -125,12 +160,19 @@ def send_reminders():
     schedule_reminders()
     return {"status": "success", "message": "Reminders sent"}
  
- 
+# @app.post("/test-sms")
+# def test_sms():
+#     send_sms_from_smsapi(
+#         "94714930320",   
+#         "Hello from DentPulse test"
+#     )
+#     return {"status": "SMS triggered"}
+     
 @app.on_event("startup")
 def start_scheduler():
-    
     scheduler.start()
     schedule_reminders()
     print("Scheduler started at application startup")
     
     
+

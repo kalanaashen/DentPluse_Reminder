@@ -1,6 +1,6 @@
 from db import get_customers_for_reminder,save_reminder_log
 from email_service import send_email
-
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 def send_reminders():
     customers = get_customers_for_reminder()
@@ -31,6 +31,10 @@ DentPulse Dental Clinic
         )
         print(f"✅ Reminder sent to {email}")
 
+scheduler = BlockingScheduler()
 
-if __name__ == "__main__":
-    send_reminders()
+# Run every day at 8 AM
+scheduler.add_job(send_reminders, 'cron', hour=8, minute=0)
+
+print("Reminder scheduler started...")
+scheduler.start()

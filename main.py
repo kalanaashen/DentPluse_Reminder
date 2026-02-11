@@ -70,37 +70,37 @@ def send_single_reminder(email, name, date, time, treatment):
         send_email(email, subject, body)
   
         print("reminder procesed for:", email)
-# def format_contact_for_smsapi(number):
+def format_contact_for_smsapi(number):
 
-#     number = number.replace(" ", "")
+    number = number.replace(" ", "")
 
-#     if number.startswith("0"):
-#         return "94" + number[1:]
-#     elif number.startswith("+94"):
-#         return number[1:]
-#     elif number.startswith("94"):
-#         return number
-#     else:
-#         raise ValueError("Invalid Sri Lankan phone number")
+    if number.startswith("0"):
+        return "94" + number[1:]
+    elif number.startswith("+94"):
+        return number[1:]
+    elif number.startswith("94"):
+        return number
+    else:
+        raise ValueError("Invalid Sri Lankan phone number")
 
 
-# def send_sms_reminder_from_smsapi(phone, name, date, time, treatment):
+def send_sms_reminder_from_smsapi(phone, name, date, time, treatment):
 
-#     formatted_phone = format_contact_for_smsapi(phone)
+    formatted_phone = format_contact_for_smsapi(phone)
 
-#     message = f"""
-# DentPulse Reminder
+    message = f"""
+DentPulse Reminder
 
-# Hello {name},
-# Appointment: {date} at {time}
-# Treatment: {treatment}
+Hello {name},
+Appointment: {date} at {time}
+Treatment: {treatment}
 
-# Please arrive 10 minutes early.
-# """
+Please arrive 10 minutes early.
+"""
 
-#     send_sms_from_smsapi(formatted_phone, message)
+    send_sms_from_smsapi(formatted_phone, message)
 
-#     print("SMSAPI reminder sent to:", phone)
+    print("SMSAPI reminder sent to:", phone)
 
     
 def format_contact(number):
@@ -147,12 +147,14 @@ def schedule_reminders():
                 args=[email, name, date, db_time, treatment]
             )
             scheduler.add_job(
-                send_sms_reminder,
+                send_sms_reminder_from_smsapi,
                 trigger="date",
                 run_date=reminder_time,
                 args=[phone, name, date, db_time, treatment]
             )
             print(f"Reminder scheduled for {email} at {reminder_time}")
+            
+
 
 
 @app.post("/send-reminders")

@@ -11,13 +11,12 @@ EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 
-def send_email(to_email, subject, body):
+def send_email(to_email, subject,html_content):
     msg = EmailMessage()
     msg["From"] = EMAIL_USER
     msg["To"] = to_email
     msg["Subject"] = subject
-    msg.set_content(body)
-
+    msg.add_alternative(html_content, subtype="html")
     with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
         server.starttls()
         server.login(EMAIL_USER, EMAIL_PASSWORD)

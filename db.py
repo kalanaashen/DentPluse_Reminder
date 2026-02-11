@@ -8,6 +8,7 @@ def get_customers_for_reminder():
     sql_query="""SELECT 
     p.email,
     p.full_name,
+    p.phone,
     a.appointment_date,
     a.start_time,
     a.treatment_type
@@ -38,3 +39,5 @@ def save_reminder_log(email, reminder_type, appointment_date):
 
     cursor.close()
     conn.close()                 
+    
+    

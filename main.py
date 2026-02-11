@@ -3,7 +3,7 @@ from db import get_customers_for_reminder
 from email_service import send_email
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta, time as dt_time
-
+from sms_service import send_sms
 app = FastAPI()
 
     
@@ -63,17 +63,33 @@ def send_single_reminder(email, name, date, time, treatment):
 </body>
 </html>
 """
-
+    
 
         send_email(email, subject, body)
-        #save_reminder_log(email)
+  
         print("reminder procesed for:", email)
-   
+def format_contact(number):
+    
+    if number.startswith("0"):
+        return "+94" + number[1:]
+    elif number.startswith("+94"):
+        return number
+    else:
+        raise ValueError("Invalid phone number format")
+  
+def send_sms_reminder(phone,name, date, time, treatment):
+  
+        message = f"""Hello {name}, This is a friendly reminder for your upcoming appointment. Date: {date}
+        Time: {time}
+        Treatment: {treatment} Please arrive 10 minutes early. Thank you, DentPulse Dental Clinic"""
+        #send_sms(format_contact(phone), message)
+        print("SMS reminder sent to:", phone)
+    
 
 def schedule_reminders():
     customers = get_customers_for_reminder()
 
-    for email, name, date, db_time, treatment in customers:
+    for email,name,phone,date, db_time, treatment in customers:
 
         if isinstance(db_time, timedelta):
             total_seconds = int(db_time.total_seconds())
@@ -95,6 +111,12 @@ def schedule_reminders():
                 run_date=reminder_time,
                 args=[email, name, date, db_time, treatment]
             )
+            scheduler.add_job(
+                send_sms_reminder,
+                trigger="date",
+                run_date=reminder_time,
+                args=[phone, name, date, db_time, treatment]
+            )
             print(f"Reminder scheduled for {email} at {reminder_time}")
 
 
@@ -110,3 +132,5 @@ def start_scheduler():
     scheduler.start()
     schedule_reminders()
     print("Scheduler started at application startup")
+    
+    

@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from db import get_customers_for_reminder
 from email_service import send_email
 from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as dt_time
+
 app = FastAPI()
 
     
@@ -72,10 +73,16 @@ def send_single_reminder(email, name, date, time, treatment):
 def schedule_reminders():
     customers = get_customers_for_reminder()
 
-    for email, name, date, time, treatment in customers:
+    for email, name, date, db_time, treatment in customers:
 
-        
-        appointment_datetime = datetime.combine(date, time)
+        if isinstance(db_time, timedelta):
+            total_seconds = int(db_time.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            db_time = dt_time(hour=hours, minute=minutes, second=seconds)
+
+        appointment_datetime = datetime.combine(date, db_time)
 
        
         reminder_time = appointment_datetime - timedelta(days=1)
@@ -86,7 +93,7 @@ def schedule_reminders():
                 send_single_reminder,
                 trigger="date",
                 run_date=reminder_time,
-                args=[email, name, date, time, treatment]
+                args=[email, name, date, db_time, treatment]
             )
             print(f"Reminder scheduled for {email} at {reminder_time}")
 

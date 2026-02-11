@@ -8,12 +8,9 @@ app = FastAPI()
     
 scheduler = BackgroundScheduler()
 
-def send_single_reminder():
+def send_single_reminder(email, name, date, time, treatment):
 
-    customers = get_customers_for_reminder()
-  
    
-    for email, name, date, time, treatment in customers:
         subject = "Appointment Reminder"
         body = f"""
 Hello {name},
@@ -57,7 +54,7 @@ def schedule_reminders():
 
 @app.post("/send-reminders")
 def send_reminders():
-    process_reminder()
+    schedule_reminders()
     return {"status": "success", "message": "Reminders sent"}
  
  
@@ -65,4 +62,5 @@ def send_reminders():
 def start_scheduler():
     
     scheduler.start()
+    schedule_reminders()
     print("Scheduler started at application startup")

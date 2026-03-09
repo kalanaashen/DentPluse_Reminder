@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from db import get_customers_for_reminder
+from db import get_customers_for_reminder,save_reminder_log
 from email_service import send_email
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta, time as dt_time
@@ -11,11 +11,11 @@ app = FastAPI()
     
 scheduler = BackgroundScheduler()
 
-def send_single_reminder(email, name, date, time, treatment):
+def send_single_reminder(email, phone,name, date, time, treatment):
 
    
         subject = "Appointment Reminder"
-        body = body = f"""
+        body = f"""
 <!DOCTYPE html>
 <html>
 <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f0fdf4;">
@@ -68,7 +68,14 @@ def send_single_reminder(email, name, date, time, treatment):
     
 
         send_email(email, subject, body)
-  
+        save_reminder_log(
+        name=name,
+        phone=phone,
+        email=email,
+        reminder_type="EMAIL",
+        appointment_date=date
+        
+    )
         print("reminder procesed for:", email)
 def format_contact_for_smsapi(number):
 
@@ -84,7 +91,7 @@ def format_contact_for_smsapi(number):
         raise ValueError("Invalid Sri Lankan phone number")
 
 
-def send_sms_reminder_from_smsapi(phone, name, date, time, treatment):
+def send_sms_reminder_from_smsapi(email,phone,name, date, time, treatment):
 
     formatted_phone = format_contact_for_smsapi(phone)
 
@@ -99,7 +106,14 @@ Please arrive 10 minutes early.
 """
 
     send_sms_from_smsapi(formatted_phone, message)
-
+    save_reminder_log(
+        name=name,
+        phone=phone,
+        email=email,
+        reminder_type="SMS",
+        appointment_date=date
+       
+    )
     print("SMSAPI reminder sent to:", phone)
 
     
@@ -144,13 +158,18 @@ def schedule_reminders():
                 send_single_reminder,
                 trigger="date",
                 run_date=reminder_time,
-                args=[email, name, date, db_time, treatment]
+                args=[email,phone ,name, date, db_time, treatment],
+                id=f"email_{email}_{date}",
+                replace_existing=True
+                
             )
             scheduler.add_job(
                 send_sms_reminder_from_smsapi,
                 trigger="date",
                 run_date=reminder_time,
-                args=[phone, name, date, db_time, treatment]
+                args=[email,phone, name, date, db_time, treatment],
+                id=f"sms_{phone}_{date}",
+                replace_existing=True
             )
             print(f"Reminder scheduled for {email} at {reminder_time}")
             

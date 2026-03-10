@@ -105,16 +105,16 @@ Treatment: {treatment}
 Please arrive 10 minutes early.
 """
 
-    send_sms_from_smsapi(formatted_phone, message)
-    save_reminder_log(
-        name=name,
-        phone=phone,
-        email=email,
-        reminder_type="SMS",
-        appointment_date=date
+    #send_sms_from_smsapi(formatted_phone, message)
+    # save_reminder_log(
+    #     name=name,
+    #     phone=phone,
+    #     email=email,
+    #     reminder_type="SMS",
+    #     appointment_date=date
        
-    )
-    print("SMSAPI reminder sent to:", phone)
+    # )
+    # print("SMSAPI reminder sent to:", phone)
 
     
 def format_contact(number):
@@ -197,3 +197,15 @@ def start_scheduler():
     
     
 
+@app.post("/test-email")
+def test_email():
+    send_single_reminder(
+        email="sonicorzone@gmail.com",
+        phone="0712345678",
+        name="Test User",
+        date=datetime.now().date(),
+        time="10:00 AM",
+        treatment="Dental Checkup"
+    )
+
+    return {"status": "success", "message": "Test email sent"}

@@ -1,6 +1,6 @@
 import mysql.connector
 from config import DB_CONFIG
-
+from datetime import datetime
 def get_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
@@ -8,6 +8,7 @@ def get_customers_for_reminder():
     sql_query="""SELECT 
     p.email,
     p.full_name,
+    p.phone,
     a.appointment_date,
     a.start_time,
     a.treatment_type
@@ -22,19 +23,23 @@ INNER JOIN patient p
     cursor.close()
     conn.close()
     return result
-    
-def save_reminder_log(email, reminder_type, appointment_date):
-    
+
+def save_reminder_log(name, phone, email, reminder_type, appointment_date):
+
     conn = get_connection()
     cursor = conn.cursor()
 
     sql = """
-    INSERT INTO reminder_log (email, reminder_type, appointment_date)
-    VALUES (%s, %s, %s)
+    INSERT INTO reminder_log 
+    (customer_name, phone_number, email, reminder_type, appointment_date,sent_at)
+    VALUES (%s, %s, %s, %s, %s,%s)
     """
 
-    cursor.execute(sql, (email, reminder_type, appointment_date))
+    cursor.execute(sql, (name, phone, email, reminder_type, appointment_date,datetime.now()))
+
     conn.commit()
 
     cursor.close()
-    conn.close()                 
+    conn.close()            
+    
+    

@@ -5,12 +5,32 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta, time as dt_time
 from sms_service import send_sms
 from smsapi_service import send_sms_from_smsapi
+import time
 
 app = FastAPI()
 
     
 scheduler = BackgroundScheduler()
 
+
+def retry_decorator(func):
+    retries=3
+    delay=2
+    def wrapper(*args,**kwargs):
+        for attempt in range(1,retries+1):
+            
+            try:
+                result=func(*args,**kwargs)
+                return result
+            except Exception as e :
+                print(f"failed in {attempt} ")
+                if attempt == retries:
+                        raise
+                time.sleep(delay)  
+        
+    return wrapper
+
+@retry_decorator
 def send_single_reminder(email, phone,name, date, time, treatment):
 
    
@@ -66,7 +86,7 @@ def send_single_reminder(email, phone,name, date, time, treatment):
 </html>
 """
     
-
+        
         send_email(email, subject, body)
         save_reminder_log(
         name=name,
@@ -90,7 +110,7 @@ def format_contact_for_smsapi(number):
     else:
         raise ValueError("Invalid Sri Lankan phone number")
 
-
+@retry_decorator
 def send_sms_reminder_from_smsapi(email,phone,name, date, time, treatment):
 
     formatted_phone = format_contact_for_smsapi(phone)
@@ -154,27 +174,31 @@ def schedule_reminders():
 
       
         if reminder_time > datetime.now():
-            scheduler.add_job(
-                send_single_reminder,
-                trigger="date",
-                run_date=reminder_time,
-                args=[email,phone ,name, date, db_time, treatment],
-                id=f"email_{email}_{date}",
-                replace_existing=True
-                
+            safe_time = db_time.strftime("%H-%M-%S")
+            email_job_id = f"email_{email}_{date}_{safe_time}"
+            sms_job_id   = f"sms_{phone}_{date}_{safe_time}"
+            if not scheduler.get_job(job_id):
+                scheduler.add_job(
+                    send_single_reminder,
+                    trigger="date",
+                    run_date=reminder_time,
+                    args=[email,phone ,name, date, db_time, treatment],
+                    id=email_job_id,
+                    replace_existing=True
+                    
             )
-            scheduler.add_job(
-                send_sms_reminder_from_smsapi,
-                trigger="date",
-                run_date=reminder_time,
-                args=[email,phone, name, date, db_time, treatment],
-                id=f"sms_{phone}_{date}",
-                replace_existing=True
+                
+            if not scheduler.get_job(job_id):
+                scheduler.add_job(
+                    send_sms_reminder_from_smsapi,
+                    trigger="date",
+                    run_date=reminder_time,
+                    args=[email,phone, name, date, db_time, treatment],
+                    id=sms_job_id,
+                    replace_existing=True
             )
             print(f"Reminder scheduled for {email} at {reminder_time}")
             
-
-
 
 @app.post("/send-reminders")
 def send_reminders():
